@@ -1,5 +1,18 @@
 export type LayerKey = "players" | "clubs" | "europe";
 
+export function getTottenhamYears(name: string): string {
+  const normalized = name.toLowerCase();
+
+  if (normalized.includes("harry kane")) return "2004-2023";
+  if (normalized.includes("son heung") || normalized.includes("heung-min")) return "2015-present";
+  if (normalized.includes("eriksen")) return "2012-2020";
+  if (normalized.includes("dele") || normalized.includes("alli")) return "2012-2022";
+  if (normalized.includes("lloris")) return "2008-2023";
+  if (normalized.includes("moussa")) return "2014-2016";
+
+  return "Archive record";
+}
+
 export type MapItem = {
   id: string;
   layer: LayerKey;
@@ -35,6 +48,7 @@ export const mapItems: MapItem[] = [
     stats: [
       ["Spurs appearances", "435"],
       ["Spurs goals", "280"],
+      ["Tottenham years", "2004-2023"],
       ["Academy joined", "2004"],
       ["First-team debut", "2011"],
     ],
@@ -52,6 +66,7 @@ export const mapItems: MapItem[] = [
     stats: [
       ["Spurs appearances", "454"],
       ["Spurs goals", "173"],
+      ["Tottenham years", "2015-present"],
       ["Signed for Spurs", "2015"],
       ["European goals", "29"],
     ],

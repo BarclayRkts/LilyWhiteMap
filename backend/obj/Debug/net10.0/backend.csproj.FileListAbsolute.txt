@@ -62,3 +62,5 @@ C:\Users\dejab\Documents\AgenticProjects\LilyWhiteMapV2\backend\bin\Debug\net10.
 C:\Users\dejab\Documents\AgenticProjects\LilyWhiteMapV2\backend\bin\Debug\net10.0\runtimes\win-arm64\native\e_sqlite3.dll
 C:\Users\dejab\Documents\AgenticProjects\LilyWhiteMapV2\backend\bin\Debug\net10.0\runtimes\win-x64\native\e_sqlite3.dll
 C:\Users\dejab\Documents\AgenticProjects\LilyWhiteMapV2\backend\bin\Debug\net10.0\runtimes\win-x86\native\e_sqlite3.dll
+C:\Users\dejab\Documents\AgenticProjects\LilyWhiteMapV2\backend\obj\Debug\net10.0\backend.sourcelink.json
+C:\Users\dejab\Documents\AgenticProjects\LilyWhiteMapV2\backend\bin\Debug\net10.0\players_still_missing_24.json

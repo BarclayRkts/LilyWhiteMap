@@ -15,5 +15,6 @@ public sealed class PlayerEntity
     public string? DateOfBirth { get; set; }
     public string? Appearances { get; set; }
     public string? Goals { get; set; }
+    public string? Years { get; set; }
     public DateTime LastSyncedAtUtc { get; set; }
 }

@@ -13,4 +13,5 @@ public sealed record Player(
     string ProfileUrl,
     string? DateOfBirth = null,
     string? Appearances = null,
-    string? Goals = null);
+    string? Goals = null,
+    string? Years = null);

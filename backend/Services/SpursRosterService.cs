@@ -64,6 +64,15 @@ public sealed partial class SpursRosterService(
             entity.DateOfBirth = player.DateOfBirth;
             entity.Appearances = player.Appearances;
             entity.Goals = player.Goals;
+            // Try to fetch years from the player's profile page; non-fatal if it fails
+            try
+            {
+                entity.Years = await GetYearsFromProfileAsync(entity.ProfileUrl, cancellationToken);
+            }
+            catch
+            {
+                entity.Years = null;
+            }
             entity.LastSyncedAtUtc = now;
             if (!existing.ContainsKey(player.Id)) db.Players.Add(entity);
         }
@@ -99,7 +108,116 @@ public sealed partial class SpursRosterService(
     private static Player ToDto(PlayerEntity player) => new(
         player.Id, player.Name, player.Location, player.Longitude, player.Latitude, player.Monogram,
         player.Position, player.Headshot, player.IsEstimatedLocation, player.ProfileUrl,
-        player.DateOfBirth, player.Appearances, player.Goals);
+        player.DateOfBirth, player.Appearances, player.Goals, player.Years);
+
+    private async Task<string?> GetYearsFromProfileAsync(string profileUrl, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(profileUrl)) return null;
+        try
+        {
+            using var response = await httpClient.GetAsync(profileUrl, cancellationToken);
+            if (!response.IsSuccessStatusCode) return null;
+            var html = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            // Keep the HTML readable and normalize whitespace so regex matches are stable.
+            var norm = Regex.Replace(html, "\\s+", " ");
+
+            // Preferred approaches: explicitly-labeled values and nearby career context.
+            var patterns = new[]
+            {
+                // label-first: Years, Spurs career, Tottenham years, Career at Spurs
+                "(?i)(?:years?|spurs?\\s*career|tottenham\\s*years?|career\\s*at\\s*spurs|career\\s*at\\s*tottenham)[^\\d]{0,80}(\\d{4})\\s*(?:[-–—]|to)\\s*(present|\\d{4})",
+                // dt/dd and th/td tables
+                "(?i)<(?:dt|th)[^>]*>\\s*(?:years?|spurs?\\s*career|tottenham\\s*years?|career\\s*at\\s*spurs)\\s*</(?:dt|th)>\\s*<(?:dd|td)[^>]*>\\s*([^<]{0,80})</(?:dd|td)>",
+                // page text snippets mentioning Spurs/Tottenham and a nearby year range
+                "(?i)(?:spurs|tottenham)[^\\d]{0,120}(\\d{4})\\s*(?:[-–—]|to)\\s*(present|\\d{4})",
+                // generic label followed by range: "Joined 2004 - 2023"
+                "(?i)(?:joined|signed|career)[^\\d]{0,120}(\\d{4})\\s*(?:[-–—]|to)\\s*(present|\\d{4})"
+            };
+
+            // Special-case: look for a 'PLAYER' label followed by a paragraph with season-style years (e.g. "2002/03 – 2002/03")
+            // Use singleline so the pattern can cross tag boundaries (e.g. <p>PLAYER</p> <p>2002/03 – 2002/03</p>)
+            var playerBlock = Regex.Match(norm, @"(?is)PLAYER.*?<p[^>]*>\s*([0-9]{4}(?:/[0-9]{2})?)\s*[–\-—]\s*([0-9]{4}(?:/[0-9]{2})?|present)\s*</p>");
+            if (playerBlock.Success)
+            {
+                var s1 = playerBlock.Groups[1].Value;
+                var s2 = playerBlock.Groups[2].Value;
+                // Normalize to '2002/03-2002/03' or '2002/03-present'
+                return s2.Equals("present", StringComparison.OrdinalIgnoreCase) ? $"{s1}-present" : $"{s1}-{s2}";
+            }
+
+            foreach (var pattern in patterns)
+            {
+                var m = Regex.Match(norm, pattern);
+                if (!m.Success) continue;
+
+                var yearStart = m.Groups[1].Value;
+                var yearEnd = m.Groups.Count > 2 ? m.Groups[2].Value : "present";
+
+                // Accept either 4-digit years or season-style like '2002/03'
+                var startIsSeason = Regex.IsMatch(yearStart, "^[0-9]{4}/[0-9]{2}$");
+                var endIsSeason = Regex.IsMatch(yearEnd, "^[0-9]{4}/[0-9]{2}$");
+
+                if (startIsSeason || endIsSeason)
+                {
+                    // If either is a season format, just return the normalized season-range
+                    return yearEnd.Equals("present", StringComparison.OrdinalIgnoreCase) ? $"{yearStart}-present" : $"{yearStart}-{yearEnd}";
+                }
+
+                if (!int.TryParse(yearStart, out var startYear) || startYear < 1900 || startYear > 2100) continue;
+                if (yearEnd.Equals("present", StringComparison.OrdinalIgnoreCase))
+                {
+                    var valid = CleanYearsValue($"{yearStart}-present");
+                    if (valid is not null) return valid;
+                }
+                else if (int.TryParse(yearEnd, out var endYear) && endYear >= startYear && endYear <= 2100)
+                {
+                    var valid = CleanYearsValue($"{yearStart}-{endYear}");
+                    if (valid is not null) return valid;
+                }
+            }
+        }
+        catch
+        {
+            // ignore network/parse errors
+        }
+
+        try { await Task.Delay(200, cancellationToken); } catch { }
+        return null;
+    }
+
+    private static string? CleanYearsValue(string? candidate)
+    {
+        if (string.IsNullOrWhiteSpace(candidate)) return null;
+        var value = candidate.Trim();
+        // Allow either yyyy-yyyy or season style yyyy/yy - yyyy/yy, or 'present'
+        var match = Regex.Match(value, @"^(\d{4}(?:/\d{2})?)\s*(?:-|–|—|to)\s*(present|\d{4}(?:/\d{2})?)$", RegexOptions.IgnoreCase);
+        if (!match.Success) return null;
+
+        var startText = match.Groups[1].Value;
+        var endText = match.Groups[2].Value;
+
+        // If season style (2002/03) just accept and normalize
+        var seasonPattern = new Regex(@"^\d{4}/\d{2}$");
+        if (seasonPattern.IsMatch(startText) || seasonPattern.IsMatch(endText))
+        {
+            return endText.Equals("present", StringComparison.OrdinalIgnoreCase) ? $"{startText}-present" : $"{startText}-{endText}";
+        }
+
+        if (!int.TryParse(startText, out var start) || start < 1900 || start > DateTime.UtcNow.Year + 2) return null;
+        int endYear;
+        if (endText.Equals("present", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"{start}-present";
+        }
+        else if (!int.TryParse(endText, out endYear))
+        {
+            return null;
+        }
+
+        if (endYear < start || endYear > DateTime.UtcNow.Year + 2) return null;
+        return $"{start}-{endYear}";
+    }
 
     private static string CleanText(string value) => WebUtility.HtmlDecode(Regex.Replace(value, "<.*?>", string.Empty)).Trim();
     private static string CountryName(string code) => code switch
