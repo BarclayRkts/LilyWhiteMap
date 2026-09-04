@@ -22,6 +22,35 @@ public sealed partial class SpursRosterService(
             .ToArrayAsync(cancellationToken);
     }
 
+    public async Task SeedFallbackPlayersAsync(CancellationToken cancellationToken)
+    {
+        var fallback = new[]
+        {
+            new PlayerEntity { Id = "harry-kane", Name = "Harry Kane", Location = "London", Longitude = -0.1278, Latitude = 51.5074, Monogram = "HK", Position = "Forward", ProfileUrl = "https://thfcdb.com/people/harry-kane", Years = "2002-2023", IsEstimatedLocation = false, LastSyncedAtUtc = DateTime.UtcNow },
+            new PlayerEntity { Id = "son-heung-min", Name = "Son Heung-min", Location = "Seoul", Longitude = 126.9780, Latitude = 37.5665, Monogram = "SH", Position = "Forward", ProfileUrl = "https://thfcdb.com/people/son-heung-min", Years = "2015-present", IsEstimatedLocation = false, LastSyncedAtUtc = DateTime.UtcNow },
+            new PlayerEntity { Id = "dejan-kulusevski", Name = "Dejan Kulusevski", Location = "Stockholm", Longitude = 18.0686, Latitude = 59.3293, Monogram = "DK", Position = "Midfielder", ProfileUrl = "https://thfcdb.com/people/dejan-kulusevski", Years = "2022-present", IsEstimatedLocation = false, LastSyncedAtUtc = DateTime.UtcNow },
+            new PlayerEntity { Id = "james-maddison", Name = "James Maddison", Location = "Coventry", Longitude = -1.5197, Latitude = 52.4064, Monogram = "JM", Position = "Midfielder", ProfileUrl = "https://thfcdb.com/people/james-maddison", Years = "2023-present", IsEstimatedLocation = false, LastSyncedAtUtc = DateTime.UtcNow },
+            new PlayerEntity { Id = "pedro-porro", Name = "Pedro Porro", Location = "Madrid", Longitude = -3.7038, Latitude = 40.4168, Monogram = "PP", Position = "Defender", ProfileUrl = "https://thfcdb.com/people/pedro-porro", Years = "2023-present", IsEstimatedLocation = false, LastSyncedAtUtc = DateTime.UtcNow },
+            new PlayerEntity { Id = "cristian-romero", Name = "Cristian Romero", Location = "Córdoba", Longitude = -4.7791, Latitude = 37.8882, Monogram = "CR", Position = "Defender", ProfileUrl = "https://thfcdb.com/people/cristian-romero", Years = "2022-present", IsEstimatedLocation = false, LastSyncedAtUtc = DateTime.UtcNow },
+            new PlayerEntity { Id = "micky-van-de-ven", Name = "Micky van de Ven", Location = "Wormer", Longitude = 4.8262, Latitude = 52.5009, Monogram = "MV", Position = "Defender", ProfileUrl = "https://thfcdb.com/people/micky-van-de-ven", Years = "2023-present", IsEstimatedLocation = false, LastSyncedAtUtc = DateTime.UtcNow },
+            new PlayerEntity { Id = "destiny-udogie", Name = "Destiny Udogie", Location = "Milan", Longitude = 9.1900, Latitude = 45.4642, Monogram = "DU", Position = "Defender", ProfileUrl = "https://thfcdb.com/people/destiny-udogie", Years = "2022-present", IsEstimatedLocation = false, LastSyncedAtUtc = DateTime.UtcNow },
+            new PlayerEntity { Id = "guglielmo-vicario", Name = "Guglielmo Vicario", Location = "Udine", Longitude = 13.2352, Latitude = 46.0653, Monogram = "GV", Position = "Goalkeeper", ProfileUrl = "https://thfcdb.com/people/guglielmo-vicario", Years = "2023-present", IsEstimatedLocation = false, LastSyncedAtUtc = DateTime.UtcNow },
+            new PlayerEntity { Id = "brennan-johnson", Name = "Brennan Johnson", Location = "Nottingham", Longitude = -1.1581, Latitude = 52.9536, Monogram = "BJ", Position = "Forward", ProfileUrl = "https://thfcdb.com/people/brennan-johnson", Years = "2024-present", IsEstimatedLocation = false, LastSyncedAtUtc = DateTime.UtcNow }
+        };
+
+        var existingIds = await db.Players.AsNoTracking().Select(player => player.Id).ToHashSetAsync(cancellationToken);
+        foreach (var player in fallback)
+        {
+            if (existingIds.Contains(player.Id)) continue;
+            db.Players.Add(player);
+        }
+
+        if (db.ChangeTracker.HasChanges())
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+    }
+
     public async Task<Player?> GetPlayerAsync(string slug, CancellationToken cancellationToken)
     {
         var entity = await db.Players.AsNoTracking()

@@ -7,7 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddDbContext<LilyWhiteMapDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("LilyWhiteMap")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("LilyWhiteMap")));
 builder.Services.AddHttpClient<SpursRosterService>(client =>
 {
     client.DefaultRequestHeaders.UserAgent.ParseAdd("LilyWhiteMap/1.0 (local development)");
@@ -25,16 +25,8 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<LilyWhiteMapDbContext>();
-    await db.Database.EnsureCreatedAsync();
-    if (!await db.Players.AnyAsync())
-    {
-        await scope.ServiceProvider.GetRequiredService<SpursRosterService>()
-            .SyncAsync(CancellationToken.None);
-    }
-}
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+app.MapGet("/", () => Results.Ok(new { status = "ok", service = "lilywhite-map-api" }));
 
 if (app.Environment.IsDevelopment())
 {
@@ -43,5 +35,31 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("Frontend");
 app.MapControllers();
+
+app.Lifetime.ApplicationStarted.Register(() =>
+{
+    _ = Task.Run(async () =>
+    {
+        try
+        {
+            using var scope = app.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<LilyWhiteMapDbContext>();
+            var rosterService = scope.ServiceProvider.GetRequiredService<SpursRosterService>();
+
+            await db.Database.EnsureCreatedAsync();
+
+            if (!await db.Players.AnyAsync())
+            {
+                await rosterService.SeedFallbackPlayersAsync(CancellationToken.None);
+            }
+
+            await rosterService.SyncAsync(CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            app.Logger.LogError(ex, "Initial roster sync failed during app startup");
+        }
+    });
+});
 
 app.Run();

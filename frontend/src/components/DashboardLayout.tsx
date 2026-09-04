@@ -37,7 +37,7 @@ export function DashboardLayout() {
     }), [allItems, query, activeLayers]);
 
   useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5178";
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
     fetch(`${apiUrl}/api/players`)
       .then((response) => {
         if (!response.ok) throw new Error(`Player service returned ${response.status}`);
