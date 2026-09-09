@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { mapItems, LayerKey, getTottenhamYears } from "@/data/map-data";
+import { API_URL } from "@/lib/config";
 import { Navbar } from "./Navbar";
 import { SidebarLeft } from "./SidebarLeft";
 import { SidebarRight } from "./SidebarRight";
@@ -37,8 +38,7 @@ export function DashboardLayout() {
     }), [allItems, query, activeLayers]);
 
   useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
-    fetch(`${apiUrl}/api/players`)
+    fetch(`${API_URL}/players`)
       .then((response) => {
         if (!response.ok) throw new Error(`Player service returned ${response.status}`);
         return response.json();

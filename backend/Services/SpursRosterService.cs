@@ -63,10 +63,11 @@ public sealed partial class SpursRosterService(
         var actionUrl = configuration["SpursApi:PeopleActionUrl"] ?? DefaultActionUrl;
         var players = new List<Player>();
 
-        for (var page = 1; page <= 100; page++)
+        for (var page = 1; page <= 25; page++)
         {
             var html = await GetPeoplePageAsync(actionUrl, page, cancellationToken);
             var pagePlayers = ParsePlayers(html);
+            if (pagePlayers.Count == 0) break;
             players.AddRange(pagePlayers);
             if (pagePlayers.Count < 100) break;
         }
@@ -75,6 +76,12 @@ public sealed partial class SpursRosterService(
             .GroupBy(player => player.Id, StringComparer.OrdinalIgnoreCase)
             .Select(group => group.First())
             .ToArray();
+
+        if (normalized.Length == 0)
+        {
+            throw new InvalidOperationException("The THFCDB roster import returned no player records. The configured source URL or parser may be invalid.");
+        }
+
         var now = DateTime.UtcNow;
         var existing = await db.Players.ToDictionaryAsync(player => player.Id, cancellationToken);
 

@@ -55,6 +55,17 @@ public sealed class SpursRosterServiceTests
         Assert.InRange(player.Latitude, 51.2, 51.9);
     }
 
+    [Fact]
+    public async Task SyncAsync_throws_when_upstream_response_has_no_players()
+    {
+        await using var db = CreateDatabase();
+        var service = CreateService(db, new HttpClient(new StubHandler("event: datastar-patch-elements\n")));
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => service.SyncAsync(CancellationToken.None));
+
+        Assert.Contains("no player records", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static LilyWhiteMapDbContext CreateDatabase() =>
         new(new DbContextOptionsBuilder<LilyWhiteMapDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())

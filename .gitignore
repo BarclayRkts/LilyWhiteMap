@@ -1,1 +1,7 @@
-# ignore frontend git backup\nfrontend_git_backup/
+# ignore frontend git backup
+frontend_git_backup/
+
+# local frontend env files
+frontend/.env.local
+frontend/.env.*
+!frontend/.env.example

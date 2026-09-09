@@ -6,6 +6,9 @@ import Map, { Marker, NavigationControl, type MapRef } from "react-map-gl/mapbox
 import type { LayerKey, MapItem } from "@/data/map-data";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
+if (!TOKEN) {
+  console.error("Missing NEXT_PUBLIC_MAPBOX_TOKEN. Set it in frontend/.env.local or your hosting environment before starting the app.");
+}
 const colors: Record<LayerKey, string> = { players: "#f5eedb", clubs: "#e5ae52", europe: "#59c98c" };
 const lightModeColors: Record<LayerKey, string> = { players: "#1f3b5b", clubs: "#d0922a", europe: "#3b9b77" };
 
@@ -74,6 +77,7 @@ export function MapContainer({ items, activeLayers, selectedId, theme, onSelect 
           zoom: selectedItem ? (selectedItem.layer === "players" ? 2.8 : 4) : 1.15,
         }}
         mapStyle={theme === "light" ? "mapbox://styles/mapbox/light-v11" : "mapbox://styles/mapbox/dark-v11"}
+        style={{ width: "100%", height: "100%" }}
         attributionControl={false}
         reuseMaps
         onLoad={tintMap}
