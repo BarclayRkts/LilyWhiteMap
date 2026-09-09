@@ -60,7 +60,7 @@ jobs:
 
       - name: Publish .NET Application
         run: |
-          dotnet publish ./backend/*.sln -c Release -o ./publish
+          dotnet publish ./backend/backend.csproj -c Release -o ./publish
 
       - name: Create Deployment Package
         run: |
