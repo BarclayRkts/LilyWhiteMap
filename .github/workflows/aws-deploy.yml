@@ -4,15 +4,11 @@ on:
   push:
     branches: [ master ]
 
-permissions:
-  id-token: write
-  contents: read
-
 env:
   AWS_REGION: us-east-1                              # AWS console region
   EB_APPLICATION_NAME: LilyWhiteMap-App              # Beanstalk App Name
   EB_ENVIRONMENT_NAME: Lilywhitemap-env              # Beanstalk Env Name
-  EB_DEPLOY_BUCKET_NAME: elasticbeanstalk-us-east-1-749957794937    # elasticbeanstalk- S3 bucket
+  EB_DEPLOY_BUCKET_NAME: elasticbeanstalk-us-east-1-749957794937 # elasticbeanstalk- S3 bucket
 
 jobs:
   # ==========================================
@@ -20,6 +16,8 @@ jobs:
   # ==========================================
   build-frontend:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read                                 # Grants this job read access to clone your code
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -35,13 +33,16 @@ jobs:
         run: |
           cd frontend
           npm ci
-          npm run build # Compiles your Next.js project into static/server production files
+          npm run build                              # Compiles your Next.js project into static/server production files
 
   # ==========================================
   # 2. BUILD & DEPLOY .NET BACKEND TO BEANSTALK
   # ==========================================
   deploy-backend:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write                                # Forces this runner machine to issue the secure OIDC token
+      contents: read                                 # Allows this runner machine to clone your code
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -55,7 +56,7 @@ jobs:
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x' # Adjust if using a different .NET version
+          dotnet-version: '8.0.x'                     # Adjust if using a different .NET version
 
       - name: Publish .NET Application
         run: |
