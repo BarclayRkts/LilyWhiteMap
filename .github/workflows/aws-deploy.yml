@@ -7,7 +7,7 @@ on:
 env:
   AWS_REGION: us-east-1                              # AWS console region
   EB_APPLICATION_NAME: LilyWhiteMap-App              # Beanstalk App Name
-  EB_ENVIRONMENT_NAME: Lilywhitemap-env              # Beanstalk Env Name
+  EB_ENVIRONMENT_NAME: LilyWhiteMap-App-env              # Beanstalk Env Name
   EB_DEPLOY_BUCKET_NAME: elasticbeanstalk-us-east-1-749957794937 # elasticbeanstalk- S3 bucket AWS
 
 jobs:
