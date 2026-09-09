@@ -11,29 +11,29 @@ env:
   EB_DEPLOY_BUCKET_NAME: elasticbeanstalk-us-east-1-749957794937 # elasticbeanstalk- S3 bucket AWS
 
 jobs:
-  # ==========================================
-  # 1. BUILD NEXT.JS / REACT FRONTEND
-  # ==========================================
-  build-frontend:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read                                 # Grants this job read access to clone your code
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js & Build Next.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: ./frontend/package-lock.json
-
-      - name: Install & Build
-        run: |
-          cd frontend
-          npm ci
-          npm run build                              # Compiles your Next.js project into static/server production files
+#  # ==========================================
+#  # 1. BUILD NEXT.JS / REACT FRONTEND
+#  # ==========================================
+#  build-frontend:
+#    runs-on: ubuntu-latest
+#    permissions:
+#      contents: read                                 # Grants this job read access to clone your code
+#    steps:
+#      - name: Checkout Code
+#        uses: actions/checkout@v4
+#
+#      - name: Setup Node.js & Build Next.js
+#        uses: actions/setup-node@v4
+#        with:
+#          node-version: '20'
+#          cache: 'npm'
+#          cache-dependency-path: ./frontend/package-lock.json
+#
+#      - name: Install & Build
+#        run: |
+#          cd frontend
+#          npm ci
+#          npm run build                              # Compiles your Next.js project into static/server production files
 
   # ==========================================
   # 2. BUILD & DEPLOY .NET BACKEND TO BEANSTALK
