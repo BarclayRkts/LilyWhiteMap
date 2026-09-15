@@ -17,10 +17,11 @@ type MapContainerProps = {
   activeLayers: Record<LayerKey, boolean>;
   selectedId: string;
   theme: "dark" | "light";
+  loading: boolean;
   onSelect: (item: MapItem) => void;
 };
 
-export function MapContainer({ items, activeLayers, selectedId, theme, onSelect }: MapContainerProps) {
+export function MapContainer({ items, activeLayers, selectedId, theme, loading, onSelect }: MapContainerProps) {
   const mapRef = useRef<MapRef | null>(null);
   const visibleItems = items.filter((item) => activeLayers[item.layer]);
   const selectedItem = items.find((item) => item.id === selectedId);
@@ -68,46 +69,55 @@ export function MapContainer({ items, activeLayers, selectedId, theme, onSelect 
 
   return (
     <main className="map-panel">
-      <Map
-        ref={mapRef}
-        mapboxAccessToken={TOKEN}
-        initialViewState={{
-          longitude: selectedItem?.coordinates[0] ?? 10,
-          latitude: selectedItem?.coordinates[1] ?? 22,
-          zoom: selectedItem ? (selectedItem.layer === "players" ? 2.8 : 4) : 1.15,
-        }}
-        mapStyle={theme === "light" ? "mapbox://styles/mapbox/light-v11" : "mapbox://styles/mapbox/dark-v11"}
-        style={{ width: "100%", height: "100%" }}
-        attributionControl={false}
-        reuseMaps
-        onLoad={tintMap}
-      >
-        <NavigationControl position="top-left" showCompass={false} />
-        {visibleItems.map((item) => {
-          const dotColor = theme === "light" ? lightModeColors[item.layer] : colors[item.layer];
-          const boxShadow = theme === "light"
-            ? `0 0 0 ${selectedId === item.id ? 4 : 2}px ${selectedId === item.id ? "rgba(31, 59, 91, 0.26)" : "rgba(31, 59, 91, 0.12)"}`
-            : `0 0 0 ${selectedId === item.id ? 4 : 2}px ${selectedId === item.id ? "rgba(255,255,255,.24)" : "rgba(255,255,255,.1)"}`;
-          return (
-            <Marker key={item.id} longitude={item.coordinates[0]} latitude={item.coordinates[1]} anchor="center" onClick={(event) => { event.originalEvent.stopPropagation(); onSelect(item); }}>
-              <button
-                className={`map-pin ${selectedId === item.id ? "selected" : ""}`}
-                style={{
-                  background: dotColor,
-                  boxShadow,
-                }}
-                aria-label={`Select ${item.name}`}
-              />
-            </Marker>
-          );
-        })}
-      </Map>
-      <div className="map-legend">
-        <span><i style={{ background: theme === "light" ? lightModeColors.players : colors.players }} /> Player birthplace</span>
-        <span><i style={{ background: theme === "light" ? lightModeColors.clubs : colors.clubs }} /> Supporters club</span>
-        <span><i style={{ background: theme === "light" ? lightModeColors.europe : colors.europe }} /> European away night</span>
-      </div>
-      <div className="scale"><span /> 2,000 km</div>
+      {loading ? (
+        <div className="map-loading" role="status" aria-live="polite">
+          <span className="map-loading-spinner" />
+          <span>Loading map data…</span>
+        </div>
+      ) : (
+        <>
+          <Map
+            ref={mapRef}
+            mapboxAccessToken={TOKEN}
+            initialViewState={{
+              longitude: selectedItem?.coordinates[0] ?? 10,
+              latitude: selectedItem?.coordinates[1] ?? 22,
+              zoom: selectedItem ? (selectedItem.layer === "players" ? 2.8 : 4) : 1.15,
+            }}
+            mapStyle={theme === "light" ? "mapbox://styles/mapbox/light-v11" : "mapbox://styles/mapbox/dark-v11"}
+            style={{ width: "100%", height: "100%" }}
+            attributionControl={false}
+            reuseMaps
+            onLoad={tintMap}
+          >
+            <NavigationControl position="top-left" showCompass={false} />
+            {visibleItems.map((item) => {
+              const dotColor = theme === "light" ? lightModeColors[item.layer] : colors[item.layer];
+              const boxShadow = theme === "light"
+                ? `0 0 0 ${selectedId === item.id ? 4 : 2}px ${selectedId === item.id ? "rgba(31, 59, 91, 0.26)" : "rgba(31, 59, 91, 0.12)"}`
+                : `0 0 0 ${selectedId === item.id ? 4 : 2}px ${selectedId === item.id ? "rgba(255,255,255,.24)" : "rgba(255,255,255,.1)"}`;
+              return (
+                <Marker key={item.id} longitude={item.coordinates[0]} latitude={item.coordinates[1]} anchor="center" onClick={(event) => { event.originalEvent.stopPropagation(); onSelect(item); }}>
+                  <button
+                    className={`map-pin ${selectedId === item.id ? "selected" : ""}`}
+                    style={{
+                      background: dotColor,
+                      boxShadow,
+                    }}
+                    aria-label={`Select ${item.name}`}
+                  />
+                </Marker>
+              );
+            })}
+          </Map>
+          <div className="map-legend">
+            <span><i style={{ background: theme === "light" ? lightModeColors.players : colors.players }} /> Player birthplace</span>
+            <span><i style={{ background: theme === "light" ? lightModeColors.clubs : colors.clubs }} /> Supporters club</span>
+            <span><i style={{ background: theme === "light" ? lightModeColors.europe : colors.europe }} /> European away night</span>
+          </div>
+          <div className="scale"><span /> 2,000 km</div>
+        </>
+      )}
     </main>
   );
 }

@@ -87,8 +87,8 @@ app.Lifetime.ApplicationStarted.Register(() =>
             }
             else
             {
-                var syncedCount = await rosterService.SyncAsync(CancellationToken.None);
-                app.Logger.LogInformation("Refresh sync imported {Count} players.", syncedCount);
+                // Players already exist; skip the slow re-scrape on every restart.
+                app.Logger.LogInformation("Players table already populated; skipping startup sync.");
             }
         }
         catch (Exception ex)

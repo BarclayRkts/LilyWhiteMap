@@ -10,6 +10,7 @@ import { MapContainer } from "./MapContainer";
 
 export function DashboardLayout() {
   const [players, setPlayers] = useState<typeof mapItems>([]);
+  const [playersLoading, setPlayersLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
   const [view, setView] = useState<"map" | "list">("map");
   const [theme, setTheme] = useState<"dark" | "light">("dark");
@@ -62,7 +63,8 @@ export function DashboardLayout() {
             : playerItems.find((player) => player.id === "player-harry-kane")?.id ?? playerItems[0].id);
         }
       })
-      .catch((error: Error) => setApiError(error.message));
+      .catch((error: Error) => setApiError(error.message))
+      .finally(() => setPlayersLoading(false));
   }, []);
 
   const toggleLayer = (layer: LayerKey) => setActiveLayers((current) => ({ ...current, [layer]: !current[layer] }));
@@ -80,12 +82,12 @@ export function DashboardLayout() {
       />
       <div className="dashboard-grid">
         <SidebarLeft activeLayers={activeLayers} onToggle={toggleLayer} playerCount={players.length} />
-        {view === "map" ? <MapContainer items={filteredItems} activeLayers={activeLayers} selectedId={selected.id} theme={theme} onSelect={(item) => setSelectedId(item.id)} /> : (
+        {view === "map" ? <MapContainer items={filteredItems} activeLayers={activeLayers} selectedId={selected.id} theme={theme} loading={playersLoading} onSelect={(item) => setSelectedId(item.id)} /> : (
           <main className="list-panel">
             <div className="section-kicker">Archive index</div>
             {apiError && <p className="api-status">Live player data unavailable: {apiError}</p>}
             <div className="archive-list">
-              {filteredItems.map((item) => <button key={item.id} onClick={() => chooseItem(item.id)}><span className="color-dot" style={{ background: item.accent }} /><span><strong>{item.name}</strong><small className="location-label" data-unavailable={/unavailable/i.test(item.location) || undefined}>{item.location}</small></span><span className="list-arrow">View</span></button>)}
+              {filteredItems.map((item) => <button key={item.id} onClick={() => chooseItem(item.id)}><span><strong>{item.name}</strong><small className="location-label" data-unavailable={/unavailable/i.test(item.location) || undefined}>{item.location}</small></span><span className="list-arrow">View</span></button>)}
               {filteredItems.length === 0 && <p className="empty">No archive entries match your search.</p>}
             </div>
           </main>
