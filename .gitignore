@@ -5,3 +5,16 @@ frontend_git_backup/
 frontend/.env.local
 frontend/.env.*
 !frontend/.env.example
+
+# IDE
+.idea/
+
+# .NET build output
+bin/
+obj/
+
+# frontend build/test artifacts
+frontend/.next/
+frontend/node_modules/
+frontend/test-results/
+frontend/playwright-report/
