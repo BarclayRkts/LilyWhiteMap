@@ -90,6 +90,15 @@ public sealed class AdminAnalyticsController(LilyWhiteMapDbContext db) : Control
         return Ok(results.Select(r => new RouteCount(r.Path, r.Views)));
     }
 
+    /// <summary>Permanently wipes all visit logs. Used to clear out historical/pre-feature data
+    /// so dashboard metrics only reflect traffic going forward.</summary>
+    [HttpDelete("reset")]
+    public async Task<IActionResult> ResetVisitLogs(CancellationToken cancellationToken)
+    {
+        await db.Database.ExecuteSqlRawAsync("TRUNCATE TABLE visit_logs RESTART IDENTITY", cancellationToken);
+        return NoContent();
+    }
+
     [HttpGet("top-referrers")]
     public async Task<ActionResult<IReadOnlyList<ReferrerCount>>> GetTopReferrers(
         [FromQuery] int take = 10,
