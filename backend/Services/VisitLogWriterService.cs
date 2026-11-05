@@ -62,6 +62,7 @@ public sealed class VisitLogWriterService(
                     Referrer = e.Referrer,
                     VisitorId = e.VisitorId,
                     ResponseTimeMs = e.ResponseTimeMs,
+                    IsSuspicious = e.IsSuspicious,
                 });
                 db.VisitLogs.AddRange(logs);
                 await db.SaveChangesAsync(stoppingToken);

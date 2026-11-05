@@ -21,11 +21,14 @@ public static class VisitLogSchema
             "UserAgent" varchar(512) NULL,
             "Referrer" varchar(1024) NULL,
             "VisitorId" varchar(64) NOT NULL,
-            "ResponseTimeMs" bigint NOT NULL
+            "ResponseTimeMs" bigint NOT NULL,
+            "IsSuspicious" boolean NOT NULL DEFAULT FALSE
         );
+        ALTER TABLE visit_logs ADD COLUMN IF NOT EXISTS "IsSuspicious" boolean NOT NULL DEFAULT FALSE;
         CREATE INDEX IF NOT EXISTS "IX_visit_logs_TimestampUtc" ON visit_logs ("TimestampUtc");
         CREATE INDEX IF NOT EXISTS "IX_visit_logs_VisitorId" ON visit_logs ("VisitorId");
         CREATE INDEX IF NOT EXISTS "IX_visit_logs_Path" ON visit_logs ("Path");
+        CREATE INDEX IF NOT EXISTS "IX_visit_logs_IsSuspicious" ON visit_logs ("IsSuspicious");
         """;
 
     public static Task EnsureCreatedAsync(LilyWhiteMapDbContext db, CancellationToken cancellationToken = default) =>

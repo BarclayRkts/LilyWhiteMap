@@ -7,7 +7,8 @@ public sealed record TrafficSummary(
     long UniqueVisitorsToday,
     long UniqueVisitorsLast7Days,
     long UniqueVisitorsAllTime,
-    double AverageResponseTimeMs);
+    double AverageResponseTimeMs,
+    long SuspiciousRequestsLast7Days);
 
 public sealed record RecentActivityItem(
     long Id,
@@ -17,7 +18,8 @@ public sealed record RecentActivityItem(
     string? IpAddress,
     string? Referrer,
     string VisitorId,
-    long ResponseTimeMs);
+    long ResponseTimeMs,
+    bool IsSuspicious);
 
 public sealed record PagedResult<T>(IReadOnlyList<T> Items, int Page, int PageSize, long TotalCount);
 

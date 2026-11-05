@@ -1,7 +1,9 @@
+using System.Threading.RateLimiting;
 using LilyWhiteMap.Api.Extensions;
 using LilyWhiteMap.Api.Middleware;
 using LilyWhiteMap.Api.Services;
 using LilyWhiteMap.Api.Startup;
+using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +33,23 @@ builder.Services.AddHostedService<VisitLogWriterService>();
 builder.Services.AddAdminJwtAuth(builder.Configuration);
 builder.Services.AddFrontendCors();
 
+// Global per-IP rate limit: throttles bots/scanners and abusive clients without affecting
+// normal browsing. Rejected requests get 429 instead of consuming app/database resources.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+    {
+        var key = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 120,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        });
+    });
+});
+
 var app = builder.Build();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
@@ -42,6 +61,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors(FrontendCorsExtensions.FrontendPolicyName);
+
+app.UseRateLimiter();
 
 app.UseMiddleware<VisitorTrackingMiddleware>();
 

@@ -6,6 +6,7 @@ export interface TrafficSummary {
   uniqueVisitorsLast7Days: number;
   uniqueVisitorsAllTime: number;
   averageResponseTimeMs: number;
+  suspiciousRequestsLast7Days: number;
 }
 
 export interface RecentActivityItem {
@@ -17,6 +18,7 @@ export interface RecentActivityItem {
   referrer: string | null;
   visitorId: string;
   responseTimeMs: number;
+  isSuspicious: boolean;
 }
 
 export interface PagedResult<T> {

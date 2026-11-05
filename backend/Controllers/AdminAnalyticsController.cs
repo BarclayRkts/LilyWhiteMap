@@ -20,20 +20,24 @@ public sealed class AdminAnalyticsController(LilyWhiteMapDbContext db) : Control
         var sevenDaysAgo = nowUtc.AddDays(-7);
 
         var logs = db.VisitLogs.AsNoTracking();
+        var realLogs = logs.Where(v => !v.IsSuspicious);
 
-        var totalAllTime = await logs.LongCountAsync(cancellationToken);
-        var totalToday = await logs.LongCountAsync(v => v.TimestampUtc >= todayStart, cancellationToken);
-        var totalLast7Days = await logs.LongCountAsync(v => v.TimestampUtc >= sevenDaysAgo, cancellationToken);
+        var totalAllTime = await realLogs.LongCountAsync(cancellationToken);
+        var totalToday = await realLogs.LongCountAsync(v => v.TimestampUtc >= todayStart, cancellationToken);
+        var totalLast7Days = await realLogs.LongCountAsync(v => v.TimestampUtc >= sevenDaysAgo, cancellationToken);
 
-        var uniqueToday = await logs.Where(v => v.TimestampUtc >= todayStart)
+        var uniqueToday = await realLogs.Where(v => v.TimestampUtc >= todayStart)
             .Select(v => v.VisitorId).Distinct().LongCountAsync(cancellationToken);
-        var uniqueLast7Days = await logs.Where(v => v.TimestampUtc >= sevenDaysAgo)
+        var uniqueLast7Days = await realLogs.Where(v => v.TimestampUtc >= sevenDaysAgo)
             .Select(v => v.VisitorId).Distinct().LongCountAsync(cancellationToken);
-        var uniqueAllTime = await logs.Select(v => v.VisitorId).Distinct().LongCountAsync(cancellationToken);
+        var uniqueAllTime = await realLogs.Select(v => v.VisitorId).Distinct().LongCountAsync(cancellationToken);
 
         var avgResponseMs = totalAllTime == 0
             ? 0
-            : await logs.AverageAsync(v => (double)v.ResponseTimeMs, cancellationToken);
+            : await realLogs.AverageAsync(v => (double)v.ResponseTimeMs, cancellationToken);
+
+        var suspiciousLast7Days = await logs.LongCountAsync(
+            v => v.IsSuspicious && v.TimestampUtc >= sevenDaysAgo, cancellationToken);
 
         return Ok(new TrafficSummary(
             TotalViewsAllTime: totalAllTime,
@@ -42,7 +46,8 @@ public sealed class AdminAnalyticsController(LilyWhiteMapDbContext db) : Control
             UniqueVisitorsToday: uniqueToday,
             UniqueVisitorsLast7Days: uniqueLast7Days,
             UniqueVisitorsAllTime: uniqueAllTime,
-            AverageResponseTimeMs: Math.Round(avgResponseMs, 1)));
+            AverageResponseTimeMs: Math.Round(avgResponseMs, 1),
+            SuspiciousRequestsLast7Days: suspiciousLast7Days));
     }
 
     [HttpGet("recent")]
@@ -61,7 +66,7 @@ public sealed class AdminAnalyticsController(LilyWhiteMapDbContext db) : Control
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(v => new RecentActivityItem(
-                v.Id, v.TimestampUtc, v.Path, v.QueryString, v.IpAddress, v.Referrer, v.VisitorId, v.ResponseTimeMs))
+                v.Id, v.TimestampUtc, v.Path, v.QueryString, v.IpAddress, v.Referrer, v.VisitorId, v.ResponseTimeMs, v.IsSuspicious))
             .ToListAsync(cancellationToken);
 
         return Ok(new PagedResult<RecentActivityItem>(items, page, pageSize, totalCount));
@@ -75,6 +80,7 @@ public sealed class AdminAnalyticsController(LilyWhiteMapDbContext db) : Control
         take = Math.Clamp(take, 1, 50);
 
         var results = await db.VisitLogs.AsNoTracking()
+            .Where(v => !v.IsSuspicious)
             .GroupBy(v => v.Path)
             .Select(g => new { Path = g.Key, Views = g.Count() })
             .OrderByDescending(r => r.Views)
@@ -92,7 +98,7 @@ public sealed class AdminAnalyticsController(LilyWhiteMapDbContext db) : Control
         take = Math.Clamp(take, 1, 50);
 
         var results = await db.VisitLogs.AsNoTracking()
-            .Where(v => v.Referrer != null && v.Referrer != "")
+            .Where(v => !v.IsSuspicious && v.Referrer != null && v.Referrer != "")
             .GroupBy(v => v.Referrer!)
             .Select(g => new { Referrer = g.Key, Views = g.Count() })
             .OrderByDescending(r => r.Views)

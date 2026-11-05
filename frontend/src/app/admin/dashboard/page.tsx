@@ -104,6 +104,7 @@ export default function AdminDashboardPage() {
           <MetricCard label="Unique Visitors Today" value={summary?.uniqueVisitorsToday ?? "—"} />
           <MetricCard label="Unique Visitors (7 days)" value={summary?.uniqueVisitorsLast7Days ?? "—"} />
           <MetricCard label="Unique Visitors All-Time" value={summary?.uniqueVisitorsAllTime ?? "—"} />
+          <MetricCard label="Bot/Scan Requests (7 days)" value={summary?.suspiciousRequestsLast7Days ?? "—"} />
         </section>
 
         <section className="grid grid-cols-1 gap-4 md:grid-cols-2">

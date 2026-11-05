@@ -19,4 +19,11 @@ public sealed class VisitLog
     public string VisitorId { get; set; } = string.Empty;
 
     public long ResponseTimeMs { get; set; }
+
+    /// <summary>
+    /// True when the request path didn't match any route this app actually serves, e.g. bot/scanner
+    /// probes for ".env", "phpinfo.php", WordPress endpoints, etc. Excluded from dashboard aggregates
+    /// but retained in the recent-activity log for security visibility.
+    /// </summary>
+    public bool IsSuspicious { get; set; }
 }

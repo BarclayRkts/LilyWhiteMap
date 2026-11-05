@@ -26,6 +26,44 @@ public sealed class VisitorTrackingMiddleware(RequestDelegate next, ILogger<Visi
         ".css", ".js", ".map", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".woff", ".woff2", ".ttf",
     ];
 
+    // The exhaustive set of paths this API actually serves. Anything else (e.g. "/.env",
+    // "/phpinfo.php", WordPress/PHP CMS probes, etc.) is internet-wide bot/scanner noise rather
+    // than real traffic, so it's flagged as suspicious and excluded from dashboard aggregates.
+    private static readonly string[] KnownExactPaths =
+    [
+        "/",
+        "/health",
+    ];
+
+    private static readonly string[] KnownPathPrefixes =
+    [
+        "/api/players",
+        "/api/admin/auth",
+        "/api/admin/sync",
+        "/api/admin/analytics",
+    ];
+
+    private static bool IsKnownRoute(string path)
+    {
+        foreach (var known in KnownExactPaths)
+        {
+            if (string.Equals(path, known, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        foreach (var prefix in KnownPathPrefixes)
+        {
+            if (path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public async Task InvokeAsync(HttpContext context)
     {
         var path = context.Request.Path.Value ?? string.Empty;
@@ -107,7 +145,8 @@ public sealed class VisitorTrackingMiddleware(RequestDelegate next, ILogger<Visi
                 UserAgent: context.Request.Headers.UserAgent.ToString() is { Length: > 0 } ua ? ua : null,
                 Referrer: context.Request.Headers.Referer.ToString() is { Length: > 0 } referrer ? referrer : null,
                 VisitorId: visitorId,
-                ResponseTimeMs: elapsedMs);
+                ResponseTimeMs: elapsedMs,
+                IsSuspicious: !IsKnownRoute(path));
 
             if (!queue.TryEnqueue(entry))
             {

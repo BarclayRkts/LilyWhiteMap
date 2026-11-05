@@ -28,6 +28,7 @@ public sealed class LilyWhiteMapDbContext(DbContextOptions<LilyWhiteMapDbContext
             entity.HasIndex(v => v.TimestampUtc);
             entity.HasIndex(v => v.VisitorId);
             entity.HasIndex(v => v.Path);
+            entity.HasIndex(v => v.IsSuspicious);
         });
     }
 }

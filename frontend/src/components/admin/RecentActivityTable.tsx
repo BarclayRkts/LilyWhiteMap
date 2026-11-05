@@ -27,9 +27,15 @@ export function RecentActivityTable({
           </thead>
           <tbody>
             {items.map((item) => (
-              <tr key={item.id} className="border-b border-neutral-800/60 text-neutral-200">
+              <tr
+                key={item.id}
+                className={`border-b border-neutral-800/60 ${item.isSuspicious ? "text-amber-500/70" : "text-neutral-200"}`}
+              >
                 <td className="whitespace-nowrap px-4 py-2">{new Date(item.timestampUtc).toLocaleString()}</td>
-                <td className="px-4 py-2 font-mono text-xs">{item.path}{item.queryString}</td>
+                <td className="px-4 py-2 font-mono text-xs">
+                  {item.isSuspicious && <span title="Not a known app route — likely bot/scanner traffic">⚠ </span>}
+                  {item.path}{item.queryString}
+                </td>
                 <td className="px-4 py-2 font-mono text-xs text-neutral-400">{item.visitorId.slice(0, 8)}</td>
                 <td className="px-4 py-2 text-neutral-400">{item.ipAddress ?? "—"}</td>
                 <td className="max-w-[220px] truncate px-4 py-2 text-neutral-400">{item.referrer ?? "—"}</td>

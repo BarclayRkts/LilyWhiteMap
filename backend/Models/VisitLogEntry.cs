@@ -9,4 +9,5 @@ public sealed record VisitLogEntry(
     string? UserAgent,
     string? Referrer,
     string VisitorId,
-    long ResponseTimeMs);
+    long ResponseTimeMs,
+    bool IsSuspicious);
